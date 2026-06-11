@@ -24,6 +24,12 @@ Abrir:
 http://127.0.0.1:8765
 ```
 
+## GitHub Pages
+
+La pagina publicada en GitHub Pages sirve para probar la pantalla, cargar pedidos, cargar compras manualmente, sumar stock y generar el texto de WhatsApp.
+
+GitHub Pages no puede ejecutar `server.py`, entonces no puede analizar fotos con IA. Para eso hace falta usar el servidor local o desplegar un backend en la nube.
+
 ## IA con foto
 
 Para analizar imagenes con IA, configurar la clave antes de iniciar:
