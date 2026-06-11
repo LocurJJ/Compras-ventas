@@ -51,7 +51,7 @@ class Handler(SimpleHTTPRequestHandler):
         known_items = form.get("known_items", {}).get("text", "[]")
         media_type = image_field["content_type"] or "image/jpeg"
         data_url = f"data:{media_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
-        model = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+        model = os.environ.get("OPENAI_MODEL", "gpt-5.4-mini")
 
         prompt = (
             "Sos un asistente para un almacen. Lee la foto de una factura, ticket, "
