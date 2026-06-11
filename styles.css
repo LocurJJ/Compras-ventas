@@ -146,7 +146,7 @@ small {
 }
 
 .purchase-panel {
-  grid-row: span 2;
+  grid-row: span 3;
 }
 
 .panel-head {
@@ -266,6 +266,13 @@ small {
   flex-wrap: wrap;
 }
 
+.catalog-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
 .notice {
   border: 1px solid #f1c27d;
   background: #fff7ed;
@@ -287,7 +294,7 @@ small {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 520px;
+  min-width: 1080px;
 }
 
 th,
@@ -307,6 +314,16 @@ th {
 
 td:last-child {
   width: 62px;
+}
+
+td input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+}
+
+.check-cell {
+  display: grid;
+  place-items: center;
 }
 
 .mini {
