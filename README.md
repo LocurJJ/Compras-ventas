@@ -24,6 +24,12 @@ Abrir:
 http://127.0.0.1:8765
 ```
 
+## Catalogo de ventas
+
+La app puede importar un catalogo JSON de productos de ventas para comparar cada renglon de compra contra el nombre oficial de la otra app.
+
+Por ahora es solo lectura: muestra producto de boleta, producto de la app, stock previo, cantidad comprada, stock final, precio de compra, descuento e IVA 21%. No modifica la app de ventas todavia.
+
 ## GitHub Pages
 
 La pagina publicada en GitHub Pages sirve para probar la pantalla, cargar pedidos, cargar compras manualmente, sumar stock y generar el texto de WhatsApp.
