@@ -67,6 +67,12 @@ els.copyWhatsappBtn.addEventListener("click", copyWhatsapp);
 els.exportBtn.addEventListener("click", exportData);
 els.importInput.addEventListener("change", importData);
 
+if (isStaticHost()) {
+  els.aiStatus.textContent = "Modo GitHub: IA no disponible";
+  els.aiHelp.hidden = false;
+  els.aiHelp.textContent = "Esta pagina esta abierta desde GitHub Pages, que solo muestra la pantalla y guarda datos en este navegador. Para analizar fotos con IA hace falta ejecutar server.py en una computadora o desplegar un servidor.";
+}
+
 function loadState() {
   const fallback = {
     pending: [],
@@ -191,6 +197,14 @@ async function analyzeImage() {
     return;
   }
 
+  if (isStaticHost()) {
+    els.aiStatus.textContent = "IA no disponible en GitHub";
+    els.aiHelp.hidden = false;
+    els.aiHelp.textContent = "GitHub Pages no puede ejecutar el servidor de IA. Use Agregar renglon para cargar la compra manualmente, o ejecute el programa local con iniciar-compras-precios.bat.";
+    toast("GitHub Pages no ejecuta IA");
+    return;
+  }
+
   els.aiStatus.textContent = "Analizando...";
   els.analyzeBtn.disabled = true;
 
@@ -209,7 +223,10 @@ async function analyzeImage() {
       method: "POST",
       body: form,
     });
-    const payload = await response.json();
+    const contentType = response.headers.get("content-type") || "";
+    const payload = contentType.includes("application/json")
+      ? await response.json()
+      : { error: "La respuesta no vino del servidor de IA. Revise que server.py este corriendo." };
     if (!response.ok) throw new Error(payload.error || "No se pudo analizar");
     const items = Array.isArray(payload.items) ? payload.items : [];
     state.purchaseRows = items.map(normalizePurchaseItem).filter((item) => item.name);
@@ -363,6 +380,10 @@ function normalizeText(value) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+function isStaticHost() {
+  return location.hostname.endsWith("github.io") || location.protocol === "file:";
 }
 
 function money(value) {
