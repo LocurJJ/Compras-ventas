@@ -10,6 +10,10 @@ const els = {
   pendingQty: document.querySelector("#pendingQty"),
   pendingList: document.querySelector("#pendingList"),
   pendingCount: document.querySelector("#pendingCount"),
+  catalogInput: document.querySelector("#catalogInput"),
+  catalogCount: document.querySelector("#catalogCount"),
+  catalogOptions: document.querySelector("#catalogOptions"),
+  clearCatalogBtn: document.querySelector("#clearCatalogBtn"),
   imageInput: document.querySelector("#imageInput"),
   imagePreview: document.querySelector("#imagePreview"),
   previewWrap: document.querySelector(".preview-wrap"),
@@ -68,6 +72,8 @@ els.applyPurchaseBtn.addEventListener("click", applyPurchase);
 els.copyWhatsappBtn.addEventListener("click", copyWhatsapp);
 els.exportBtn.addEventListener("click", exportData);
 els.importInput.addEventListener("change", importData);
+els.catalogInput.addEventListener("change", importCatalog);
+els.clearCatalogBtn.addEventListener("click", clearCatalog);
 
 if (isStaticHost()) {
   els.aiStatus.textContent = "Modo GitHub: IA no disponible";
@@ -78,6 +84,7 @@ if (isStaticHost()) {
 function loadState() {
   const fallback = {
     pending: [],
+    catalog: [],
     stock: [],
     purchaseRows: [],
     lastWhatsapp: "",
@@ -96,9 +103,19 @@ function saveState() {
 
 function render() {
   renderPending();
+  renderCatalog();
   renderPurchaseRows();
   renderStock();
   els.whatsappText.value = state.lastWhatsapp || buildWhatsappMessage(state.stock);
+}
+
+function renderCatalog() {
+  els.catalogCount.textContent = `${state.catalog.length} producto${state.catalog.length === 1 ? "" : "s"} importado${state.catalog.length === 1 ? "" : "s"}`;
+  els.catalogOptions.innerHTML = state.catalog
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, "es"))
+    .map((product) => `<option value="${escapeAttr(product.name)}"></option>`)
+    .join("");
 }
 
 function renderPending() {
@@ -135,27 +152,44 @@ function renderPurchaseRows() {
   els.purchaseRows.innerHTML = "";
   if (!state.purchaseRows.length) {
     const row = document.createElement("tr");
-    row.innerHTML = `<td colspan="4" class="meta">Todavia no hay renglones cargados.</td>`;
+    row.innerHTML = `<td colspan="9" class="meta">Todavia no hay renglones cargados.</td>`;
     els.purchaseRows.appendChild(row);
     return;
   }
 
   state.purchaseRows.forEach((item, index) => {
+    const match = findCatalogProduct(item);
+    const previousStock = Number(match?.stock || 0);
+    const quantity = Number(item.quantity || 0);
+    const nextStock = previousStock + quantity;
     const row = document.createElement("tr");
     row.innerHTML = `
       <td><input data-field="name" data-index="${index}" value="${escapeAttr(item.name)}" /></td>
+      <td><input data-field="app_product" data-index="${index}" list="catalogOptions" value="${escapeAttr(item.app_product || match?.name || "")}" placeholder="Buscar producto" /></td>
+      <td class="meta">${previousStock}</td>
       <td><input data-field="quantity" data-index="${index}" type="number" min="0" step="1" value="${Number(item.quantity || 1)}" /></td>
+      <td class="meta">${Number(nextStock.toFixed(2))}</td>
       <td><input data-field="unit_price" data-index="${index}" type="number" min="0" step="0.01" value="${Number(item.unit_price || 0)}" /></td>
+      <td><input data-field="discount" data-index="${index}" type="number" min="0" max="100" step="0.01" value="${Number(item.discount || 0)}" /></td>
+      <td><span class="check-cell"><input data-field="iva21" data-index="${index}" type="checkbox" ${item.iva21 ? "checked" : ""} /></span></td>
       <td><button class="danger mini" data-remove-row="${index}">X</button></td>
     `;
     els.purchaseRows.appendChild(row);
   });
 
   els.purchaseRows.querySelectorAll("input").forEach((input) => {
-    input.addEventListener("input", () => {
+    const eventName = input.type === "checkbox" ? "change" : "input";
+    input.addEventListener(eventName, () => {
       const item = state.purchaseRows[Number(input.dataset.index)];
-      item[input.dataset.field] = input.dataset.field === "name" ? input.value : Number(input.value);
+      if (input.type === "checkbox") {
+        item[input.dataset.field] = input.checked;
+      } else if (input.dataset.field === "name" || input.dataset.field === "app_product") {
+        item[input.dataset.field] = input.value;
+      } else {
+        item[input.dataset.field] = Number(input.value);
+      }
       saveState();
+      if (input.dataset.field === "app_product" || input.dataset.field === "quantity") renderPurchaseRows();
     });
   });
 
@@ -261,26 +295,53 @@ async function analyzeImage() {
 function addPurchaseRow() {
   state.purchaseRows.push({
     name: "",
+    app_product: "",
     quantity: 1,
     unit_price: 0,
+    discount: 0,
+    iva21: false,
   });
   saveAndRender("Renglon agregado");
 }
 
 function loadDemoInvoice() {
   state.purchaseRows = [
-    { name: "Yogur cremigal frutilla", quantity: 20, unit_price: 800.54 },
-    { name: "Yogur cremigal vainilla", quantity: 15, unit_price: 1161.33 },
-    { name: "Yogur cremigal durazno", quantity: 15, unit_price: 1161.33 },
-    { name: "Leche cremigal entera", quantity: 144, unit_price: 1224.98 },
-    { name: "Manaos 2.25 cola", quantity: 24, unit_price: 292.91 },
-    { name: "Manaos 2.25 pomelo blanco", quantity: 18, unit_price: 1229.91 },
-    { name: "Manaos 1.5 naranja", quantity: 18, unit_price: 1229.91 },
+    { name: "Yogur cremigal frutilla", quantity: 20, unit_price: 800.54, discount: 0, iva21: false },
+    { name: "Yogur cremigal vainilla", quantity: 15, unit_price: 1161.33, discount: 0, iva21: false },
+    { name: "Yogur cremigal durazno", quantity: 15, unit_price: 1161.33, discount: 0, iva21: false },
+    { name: "Leche cremigal entera", quantity: 144, unit_price: 1224.98, discount: 0, iva21: false },
+    { name: "Manaos 2.25 cola", quantity: 24, unit_price: 292.91, discount: 0, iva21: false },
+    { name: "Manaos 2.25 pomelo blanco", quantity: 18, unit_price: 1229.91, discount: 0, iva21: false },
+    { name: "Manaos 1.5 naranja", quantity: 18, unit_price: 1229.91, discount: 0, iva21: false },
   ];
   els.aiStatus.textContent = "Demo cargada";
   els.aiHelp.hidden = false;
   els.aiHelp.textContent = "Estos son renglones de ejemplo para probar el circuito completo sin gastar credito de OpenAI. Puede corregir nombres, cantidades y precios antes de aplicar la compra.";
   saveAndRender("Demo de factura cargada");
+}
+
+function importCatalog() {
+  const file = els.catalogInput.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const raw = JSON.parse(reader.result);
+      const items = Array.isArray(raw) ? raw : raw.products;
+      if (!Array.isArray(items)) throw new Error("Formato invalido");
+      state.catalog = items.map(normalizeCatalogProduct).filter((item) => item.name);
+      saveAndRender("Catalogo importado");
+    } catch {
+      toast("No pude importar el catalogo");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearCatalog() {
+  state.catalog = [];
+  state.purchaseRows = state.purchaseRows.map((row) => ({ ...row, app_product: "" }));
+  saveAndRender("Catalogo limpiado");
 }
 
 function applyPurchase() {
@@ -363,6 +424,7 @@ function importData() {
     try {
       const data = JSON.parse(reader.result);
       state.pending = Array.isArray(data.pending) ? data.pending : [];
+      state.catalog = Array.isArray(data.catalog) ? data.catalog : [];
       state.stock = Array.isArray(data.stock) ? data.stock : [];
       state.purchaseRows = Array.isArray(data.purchaseRows) ? data.purchaseRows : [];
       state.lastWhatsapp = data.lastWhatsapp || "";
@@ -378,9 +440,33 @@ function importData() {
 function normalizePurchaseItem(item) {
   return {
     name: cleanName(item.name || item.product || ""),
+    app_product: cleanName(item.app_product || item.matched_product || ""),
     quantity: Number(item.quantity || item.qty || 1),
     unit_price: Number(item.unit_price || item.price || 0),
+    discount: Number(item.discount || 0),
+    iva21: Boolean(item.iva21),
   };
+}
+
+function normalizeCatalogProduct(item) {
+  return {
+    id: item.id || item.codigo || item.barcode || crypto.randomUUID(),
+    name: cleanName(item.name || item.nombre || item.product || ""),
+    stock: Number(item.stock || 0),
+    cost: Number(item.cost || item.costo || item.purchasePrice || 0),
+    salePrice: Number(item.salePrice || item.precioVenta || item.price || 0),
+    barcode: cleanName(item.barcode || item.codigo || ""),
+  };
+}
+
+function findCatalogProduct(row) {
+  if (!state.catalog.length) return null;
+  const selected = cleanName(row.app_product);
+  if (selected) {
+    const exact = state.catalog.find((product) => normalizeText(product.name) === normalizeText(selected));
+    if (exact) return exact;
+  }
+  return findByName(state.catalog, row.name);
 }
 
 function readApiError(payload) {
