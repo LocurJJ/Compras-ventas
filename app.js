@@ -227,7 +227,7 @@ async function analyzeImage() {
     const payload = contentType.includes("application/json")
       ? await response.json()
       : { error: "La respuesta no vino del servidor de IA. Revise que server.py este corriendo." };
-    if (!response.ok) throw new Error(payload.error || "No se pudo analizar");
+    if (!response.ok) throw new Error(readApiError(payload));
     const items = Array.isArray(payload.items) ? payload.items : [];
     state.purchaseRows = items.map(normalizePurchaseItem).filter((item) => item.name);
     saveAndRender(`${state.purchaseRows.length} renglon${state.purchaseRows.length === 1 ? "" : "es"} detectado${state.purchaseRows.length === 1 ? "" : "s"}`);
@@ -363,6 +363,20 @@ function normalizePurchaseItem(item) {
   };
 }
 
+function readApiError(payload) {
+  if (!payload) return "No se pudo analizar";
+  if (payload.details) {
+    try {
+      const details = JSON.parse(payload.details);
+      const message = details.error?.message || details.message;
+      if (message) return message;
+    } catch {
+      return payload.details;
+    }
+  }
+  return payload.error || "No se pudo analizar";
+}
+
 function findByName(items, name) {
   const target = normalizeText(name);
   return items.find((item) => {
@@ -421,7 +435,7 @@ function escapeHtml(value) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
+    .replaceAll('\"', "&quot;")
     .replaceAll("'", "&#039;");
 }
 
