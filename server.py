@@ -92,6 +92,7 @@ class Handler(SimpleHTTPRequestHandler):
                 payload = json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             details = exc.read().decode("utf-8", errors="replace")
+            print(f"OpenAI HTTP error {exc.code}: {details}")
             self.json_response(exc.code, {"error": "La IA rechazo la solicitud.", "details": details})
             return
         except Exception as exc:
