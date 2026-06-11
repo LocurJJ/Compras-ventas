@@ -17,6 +17,7 @@ const els = {
   aiHelp: document.querySelector("#aiHelp"),
   analyzeBtn: document.querySelector("#analyzeBtn"),
   addManualBtn: document.querySelector("#addManualBtn"),
+  demoBtn: document.querySelector("#demoBtn"),
   purchaseRows: document.querySelector("#purchaseRows"),
   applyPurchaseBtn: document.querySelector("#applyPurchaseBtn"),
   stockList: document.querySelector("#stockList"),
@@ -62,6 +63,7 @@ els.imageInput.addEventListener("change", () => {
 
 els.analyzeBtn.addEventListener("click", analyzeImage);
 els.addManualBtn.addEventListener("click", () => addPurchaseRow());
+els.demoBtn.addEventListener("click", loadDemoInvoice);
 els.applyPurchaseBtn.addEventListener("click", applyPurchase);
 els.copyWhatsappBtn.addEventListener("click", copyWhatsapp);
 els.exportBtn.addEventListener("click", exportData);
@@ -245,6 +247,8 @@ async function analyzeImage() {
       els.aiHelp.textContent = "La foto se subio bien, pero falta configurar OPENAI_API_KEY para que la IA pueda leer facturas. Mientras tanto, use Agregar renglon para cargar producto, cantidad y precio a mano.";
     } else if (serverDown) {
       els.aiHelp.textContent = "La pantalla esta abierta, pero el servidor de Python no esta conectado. Cierre esta pestana, abra iniciar-compras-precios.bat y entre por http://127.0.0.1:8765. Deje abierta la ventana negra mientras usa el programa.";
+    } else if (error.message.toLowerCase().includes("quota")) {
+      els.aiHelp.textContent = `${error.message}. Para probar sin pagar, toque Demo factura y cargamos renglones de ejemplo.`;
     } else {
       els.aiHelp.textContent = `${error.message}. Puede usar Agregar renglon para cargar la compra manualmente.`;
     }
@@ -261,6 +265,22 @@ function addPurchaseRow() {
     unit_price: 0,
   });
   saveAndRender("Renglon agregado");
+}
+
+function loadDemoInvoice() {
+  state.purchaseRows = [
+    { name: "Yogur cremigal frutilla", quantity: 20, unit_price: 800.54 },
+    { name: "Yogur cremigal vainilla", quantity: 15, unit_price: 1161.33 },
+    { name: "Yogur cremigal durazno", quantity: 15, unit_price: 1161.33 },
+    { name: "Leche cremigal entera", quantity: 144, unit_price: 1224.98 },
+    { name: "Manaos 2.25 cola", quantity: 24, unit_price: 292.91 },
+    { name: "Manaos 2.25 pomelo blanco", quantity: 18, unit_price: 1229.91 },
+    { name: "Manaos 1.5 naranja", quantity: 18, unit_price: 1229.91 },
+  ];
+  els.aiStatus.textContent = "Demo cargada";
+  els.aiHelp.hidden = false;
+  els.aiHelp.textContent = "Estos son renglones de ejemplo para probar el circuito completo sin gastar credito de OpenAI. Puede corregir nombres, cantidades y precios antes de aplicar la compra.";
+  saveAndRender("Demo de factura cargada");
 }
 
 function applyPurchase() {
@@ -435,7 +455,7 @@ function escapeHtml(value) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('\"', "&quot;")
+    .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
 
