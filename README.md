@@ -57,6 +57,8 @@ Si no hay clave, la app igual permite cargar los renglones a mano y aplica la mi
 - deja pendiente lo que todavia falta comprar;
 - arma el texto para copiar y pegar en WhatsApp.
 
+Tambien se puede usar `Demo factura` para probar el circuito completo sin gastar credito de OpenAI.
+
 Si en la pantalla aparece `Falta configurar IA`, la foto se subio correctamente pero el servidor se inicio sin `OPENAI_API_KEY`.
 
 Si aparece `Servidor no conectado`, el navegador esta abierto pero `server.py` no esta corriendo.
