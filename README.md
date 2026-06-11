@@ -30,6 +30,16 @@ La pagina publicada en GitHub Pages sirve para probar la pantalla, cargar pedido
 
 GitHub Pages no puede ejecutar `server.py`, entonces no puede analizar fotos con IA. Para eso hace falta usar el servidor local o desplegar un backend en la nube.
 
+## Render
+
+Para usarlo como app web con IA:
+
+1. Crear una cuenta o entrar a Render.
+2. Crear un Web Service conectado a `LocurJJ/Compras-ventas`.
+3. Usar `python server.py` como comando de inicio, o importar `render.yaml`.
+4. Agregar la variable secreta `OPENAI_API_KEY`.
+5. Abrir la URL `onrender.com` que genere Render.
+
 ## IA con foto
 
 Para analizar imagenes con IA, configurar la clave antes de iniciar:
