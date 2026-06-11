@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Compras y precios</title>
-    <link rel="stylesheet" href="styles.css?v=3" />
+    <link rel="stylesheet" href="styles.css?v=4" />
   </head>
   <body>
     <header class="topbar">
@@ -39,6 +39,25 @@
         <div id="pendingList" class="list"></div>
       </section>
 
+      <section class="panel catalog-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Productos de ventas</h2>
+            <span id="catalogCount">0 productos importados</span>
+          </div>
+        </div>
+        <div class="catalog-actions">
+          <label class="import-label" title="Importar catalogo de ventas">
+            Importar catalogo
+            <input id="catalogInput" type="file" accept="application/json" />
+          </label>
+          <button id="clearCatalogBtn" class="ghost" type="button">Limpiar</button>
+        </div>
+        <div class="item">
+          <span class="meta">Solo lectura. Esto no modifica la app de ventas.</span>
+        </div>
+      </section>
+
       <section class="panel purchase-panel">
         <div class="panel-head">
           <div>
@@ -71,14 +90,20 @@
             <thead>
               <tr>
                 <th>Producto</th>
+                <th>Producto app</th>
+                <th>Stock previo</th>
                 <th>Cantidad</th>
+                <th>Stock final</th>
                 <th>Precio</th>
+                <th>Desc. %</th>
+                <th>IVA 21%</th>
                 <th></th>
               </tr>
             </thead>
             <tbody id="purchaseRows"></tbody>
           </table>
         </div>
+        <datalist id="catalogOptions"></datalist>
 
         <button id="applyPurchaseBtn" class="primary wide">Aplicar compra</button>
       </section>
@@ -106,6 +131,6 @@
     </main>
 
     <div id="toast" class="toast"></div>
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
   </body>
 </html>
