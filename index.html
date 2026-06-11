@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Compras y precios</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <h1>Compras y precios</h1>
+        <p id="today"></p>
+      </div>
+      <div class="top-actions">
+        <button id="exportBtn" class="ghost" title="Exportar datos">Exportar</button>
+        <label class="import-label" title="Importar datos">
+          Importar
+          <input id="importInput" type="file" accept="application/json" />
+        </label>
+      </div>
+    </header>
+
+    <main class="shell">
+      <section class="panel pending-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Falta comprar</h2>
+            <span id="pendingCount">0 pendientes</span>
+          </div>
+        </div>
+
+        <form id="pendingForm" class="entry-row">
+          <input id="pendingName" required autocomplete="off" placeholder="Producto" />
+          <input id="pendingQty" type="number" min="1" step="1" placeholder="Cant." />
+          <button type="submit">Agregar</button>
+        </form>
+
+        <div id="pendingList" class="list"></div>
+      </section>
+
+      <section class="panel purchase-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Cargar compra</h2>
+            <span id="aiStatus">Foto, IA o carga manual</span>
+          </div>
+        </div>
+
+        <div class="upload-grid">
+          <label class="dropzone">
+            <input id="imageInput" type="file" accept="image/*" />
+            <span>Subir foto</span>
+            <small>Ticket, factura o remito</small>
+          </label>
+          <div class="preview-wrap">
+            <img id="imagePreview" alt="" />
+            <span id="emptyPreview">Sin imagen</span>
+          </div>
+        </div>
+
+        <div class="purchase-actions">
+          <button id="analyzeBtn">Analizar con IA</button>
+          <button id="addManualBtn" class="ghost">Agregar renglon</button>
+        </div>
+        <div id="aiHelp" class="notice" hidden></div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="purchaseRows"></tbody>
+          </table>
+        </div>
+
+        <button id="applyPurchaseBtn" class="primary wide">Aplicar compra</button>
+      </section>
+
+      <section class="panel stock-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Stock y precios</h2>
+            <span id="stockCount">0 productos</span>
+          </div>
+        </div>
+        <div id="stockList" class="stock-list"></div>
+      </section>
+
+      <section class="panel whatsapp-panel">
+        <div class="panel-head">
+          <div>
+            <h2>WhatsApp</h2>
+            <span>Mensaje listo para copiar</span>
+          </div>
+        </div>
+        <textarea id="whatsappText" spellcheck="false"></textarea>
+        <button id="copyWhatsappBtn" class="primary wide">Copiar mensaje</button>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
