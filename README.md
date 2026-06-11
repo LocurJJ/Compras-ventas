@@ -46,6 +46,8 @@ Para usarlo como app web con IA:
 4. Agregar la variable secreta `OPENAI_API_KEY`.
 5. Abrir la URL `onrender.com` que genere Render.
 
+Opcional: si OpenAI cambia el acceso a modelos, en Render se puede agregar `OPENAI_MODEL` con el modelo a usar. Por defecto usa `gpt-5.4-mini`.
+
 ## IA con foto
 
 Para analizar imagenes con IA, configurar la clave antes de iniciar:
