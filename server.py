@@ -174,6 +174,7 @@ class Handler(SimpleHTTPRequestHandler):
             candidates.append(preferred)
         candidates.extend(
             [
+                "gpt-5",
                 "gpt-5-mini",
                 "gpt-5.1-mini",
                 "gpt-5.4-mini",
