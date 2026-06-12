@@ -51,7 +51,7 @@ class Handler(SimpleHTTPRequestHandler):
         known_items = form.get("known_items", {}).get("text", "[]")
         media_type = image_field["content_type"] or "image/jpeg"
         data_url = f"data:{media_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
-        model = os.environ.get("OPENAI_MODEL", "gpt-5.4-mini")
+        models = self.model_candidates()
 
         prompt = (
             "Sos un asistente para un almacen. Lee la foto de una factura, ticket, "
@@ -63,40 +63,60 @@ class Handler(SimpleHTTPRequestHandler):
             f"{known_items}"
         )
 
-        body = {
-            "model": model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": data_url}},
-                    ],
-                }
-            ],
-            "temperature": 0,
-            "response_format": {"type": "json_object"},
-        }
+        payload = None
+        last_model_error = ""
+        for model in models:
+            body = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {"type": "image_url", "image_url": {"url": data_url}},
+                        ],
+                    }
+                ],
+                "temperature": 0,
+                "response_format": {"type": "json_object"},
+            }
 
-        try:
-            req = urllib.request.Request(
-                "https://api.openai.com/v1/chat/completions",
-                data=json.dumps(body).encode("utf-8"),
-                headers={
-                    "Authorization": f"Bearer {key}",
-                    "Content-Type": "application/json",
+            try:
+                req = urllib.request.Request(
+                    "https://api.openai.com/v1/chat/completions",
+                    data=json.dumps(body).encode("utf-8"),
+                    headers={
+                        "Authorization": f"Bearer {key}",
+                        "Content-Type": "application/json",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=60) as response:
+                    payload = json.loads(response.read().decode("utf-8"))
+                break
+            except urllib.error.HTTPError as exc:
+                details = exc.read().decode("utf-8", errors="replace")
+                print(f"OpenAI HTTP error {exc.code} with {model}: {details}")
+                if self.is_model_access_error(details):
+                    last_model_error = details
+                    continue
+                self.json_response(
+                    exc.code,
+                    {"error": "La IA rechazo la solicitud.", "details": details},
+                )
+                return
+            except Exception as exc:
+                self.json_response(502, {"error": f"No se pudo analizar la imagen: {exc}"})
+                return
+
+        if payload is None:
+            self.json_response(
+                403,
+                {
+                    "error": "La cuenta de OpenAI no tiene acceso a los modelos configurados.",
+                    "details": last_model_error,
                 },
-                method="POST",
             )
-            with urllib.request.urlopen(req, timeout=60) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-        except urllib.error.HTTPError as exc:
-            details = exc.read().decode("utf-8", errors="replace")
-            print(f"OpenAI HTTP error {exc.code}: {details}")
-            self.json_response(exc.code, {"error": "La IA rechazo la solicitud.", "details": details})
-            return
-        except Exception as exc:
-            self.json_response(502, {"error": f"No se pudo analizar la imagen: {exc}"})
             return
 
         content = payload["choices"][0]["message"]["content"]
@@ -106,6 +126,22 @@ class Handler(SimpleHTTPRequestHandler):
             self.json_response(502, {"error": "La IA no devolvio JSON valido.", "raw": content})
             return
         self.json_response(200, parsed)
+
+    def model_candidates(self):
+        candidates = []
+        preferred = os.environ.get("OPENAI_MODEL")
+        if preferred:
+            candidates.append(preferred)
+        candidates.extend(["gpt-4.1-mini", "gpt-4o-mini", "gpt-4.1", "gpt-4o"])
+        return list(dict.fromkeys(candidates))
+
+    def is_model_access_error(self, details):
+        text = details.lower()
+        return (
+            "does not have access to model" in text
+            or "model_not_found" in text
+            or "does not exist or you do not have access" in text
+        )
 
     def parse_multipart(self):
         length = int(self.headers.get("Content-Length", "0"))
