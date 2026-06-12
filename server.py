@@ -20,11 +20,50 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
 
+    def do_GET(self):
+        if self.path == "/api/openai-models":
+            self.openai_models()
+            return
+        super().do_GET()
+
     def do_POST(self):
         if self.path == "/api/analyze-image":
             self.analyze_image()
             return
         self.send_error(404, "Not found")
+
+    def openai_models(self):
+        key = os.environ.get("OPENAI_API_KEY")
+        if not key:
+            self.json_response(503, {"error": "OPENAI_API_KEY no esta configurada."})
+            return
+
+        try:
+            req = urllib.request.Request(
+                "https://api.openai.com/v1/models",
+                headers={"Authorization": f"Bearer {key}"},
+                method="GET",
+            )
+            with urllib.request.urlopen(req, timeout=30) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            details = exc.read().decode("utf-8", errors="replace")
+            self.json_response(exc.code, {"error": "No se pudieron leer los modelos.", "details": details})
+            return
+        except Exception as exc:
+            self.json_response(502, {"error": f"No se pudieron leer los modelos: {exc}"})
+            return
+
+        ids = sorted(item.get("id", "") for item in payload.get("data", []) if item.get("id"))
+        candidates = self.model_candidates()
+        self.json_response(
+            200,
+            {
+                "models": ids,
+                "configured_candidates": candidates,
+                "matching_candidates": [model for model in candidates if model in ids],
+            },
+        )
 
     def analyze_image(self):
         key = os.environ.get("OPENAI_API_KEY")
@@ -114,6 +153,7 @@ class Handler(SimpleHTTPRequestHandler):
                 403,
                 {
                     "error": "La cuenta de OpenAI no tiene acceso a los modelos configurados.",
+                    "tried_models": models,
                     "details": last_model_error,
                 },
             )
@@ -132,7 +172,17 @@ class Handler(SimpleHTTPRequestHandler):
         preferred = os.environ.get("OPENAI_MODEL")
         if preferred:
             candidates.append(preferred)
-        candidates.extend(["gpt-4.1-mini", "gpt-4o-mini", "gpt-4.1", "gpt-4o"])
+        candidates.extend(
+            [
+                "gpt-5-mini",
+                "gpt-5.1-mini",
+                "gpt-5.4-mini",
+                "gpt-4.1-mini",
+                "gpt-4o-mini",
+                "gpt-4.1",
+                "gpt-4o",
+            ]
+        )
         return list(dict.fromkeys(candidates))
 
     def is_model_access_error(self, details):
